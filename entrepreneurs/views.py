@@ -3,9 +3,10 @@ from django.urls import reverse
 from django.http import HttpRequest
 from .models import Company, Document, Metric
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, aggregates as agg
 from django.core.exceptions import ValidationError, PermissionDenied
 from django.contrib.auth.decorators import login_required
+from investors.models import ProposalInvestment
 
 
 @login_required(login_url='signin')
@@ -94,13 +95,25 @@ def list_companies(request: HttpRequest):
 @login_required(login_url='signin')
 def company_detail(request: HttpRequest, pk: int):
     """show the details of the company"""
+    company = get_object_or_404(Company, pk=pk, user=request.user)
+    proposals = ProposalInvestment.objects.filter(company=company)
+    company_summary = ProposalInvestment.get_summary(company)
+
+    sold_pct = int(company_summary.get('sold_pct'))
+    amount = float(company_summary.get('amount'))
+    tot_valuation = amount * 100 / sold_pct
     context = {
-        'company': get_object_or_404(Company, pk=pk, user=request.user),
-        'docs': Document.objects.filter(company__pk=pk)
+        'company': company,
+        'docs': Document.objects.filter(company__pk=pk),
+        'sent_proposals': proposals.filter(status=ProposalInvestment.ProposalStatus.SENT),
+        'sold_pct': sold_pct,
+        'amount': amount,
+        'current_valuation': tot_valuation
     }
     return render(request, 'company_detail.html', context)
 
 
+@login_required(login_url='signin')
 def add_doc(request: HttpRequest, pk: int):
     """add a document to the requested company"""
     COMPANY_REDIRECT = redirect(reverse('company_detail', args=[pk]))
@@ -172,3 +185,23 @@ def add_metric(request: HttpRequest, pk: int):
     metric.save()
     messages.success(request, "Métrica cadastrada com sucesso")
     return COMPANY_REDIRECT
+
+
+@login_required(login_url='signin')
+def manage_proposal(request: HttpRequest, pk: int):
+    action = request.GET.get('action')
+    proposal = get_object_or_404(ProposalInvestment, pk=pk)
+
+    actions = {
+        'accept': proposal.ProposalStatus.ACCEPTED,
+        'refuse': proposal.ProposalStatus.REFUSED
+    }
+    try:
+        proposal.status = actions[action]
+        proposal.save()
+        messages.info(request, proposal.status.label)
+        return redirect(reverse('company_detail', args=[proposal.company.pk]))
+    
+    except KeyError:
+        messages.error(request, 'Ação inválida.')
+        return redirect(reverse('company_detail', args=[proposal.company.pk]))

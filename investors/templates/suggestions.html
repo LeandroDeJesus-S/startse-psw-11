@@ -29,12 +29,13 @@
                         e ter maiores possíbilidades de retorno.</p>
                     <select name="tipo" id="" class="form-select">
                         <option value="C">Conservador</option>
+                        <option value="I">Intermediário</option>
                         <option value="D">Despojado</option>
                     </select>
                     <br>
                     <h3>Áreas de interesses</h3>
                     <p>Selecione as áreas de mercado que possui interesse em investir</p>
-                    <select name="area" id="" class="form-select" multiple>
+                    <select name="area_" id="" class="form-select" multiple>
                         {% for area in areas %}
                             <option value="{{area}}">{{area.label}}</option>
                         {% endfor %}
@@ -61,7 +62,7 @@
                         <div class="card-body dark-color">
                         <h5 class="card-title">{{company.name}}</h5>
                         <p class="card-text">{{company.desc}}</p>
-                        <a href="#" class="btn btn-indigo">Acessar</a>
+                        <a href="{% url "see_company" company.pk %}" class="btn btn-indigo">Acessar</a>
                         </div>
                     </div>
                 </div>

@@ -1,4 +1,3 @@
-import os
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import (
@@ -23,7 +22,7 @@ class Company(models.Model):
         """time of existence of the company"""
         LESS_6M = '-6', _('Menos de 6 meses')
         GREATEST_6M = '+6', _('Mais de 6 meses')
-        LESS_1Y = '+1', _('Mais de 1 ano')
+        GREATEST_1Y = '+1', _('Mais de 1 ano')
         GREATEST_5Y = '+5', _('Mais de 5 anos')
     
     class StageChoices(models.TextChoices):
